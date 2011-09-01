@@ -1,3 +1,5 @@
+import fractions 
+
 class BayesModel:
     def __init__(self):
         self.docs = [0, 0]
@@ -25,7 +27,7 @@ class BayesModel:
             self.word_probs[word] = [0, 0]
         for t in [0, 1]:
             for word in self.word_occs:
-                self.word_probs[word][t] = float(self.word_occs[word][t] + 1) / float(self.word_totals[t] + len(self.word_occs))
+                self.word_probs[word][t] = fractions.Fraction(self.word_occs[word][t] + 1, self.word_totals[t] + len(self.word_occs))
         
     def judge(self, document):
         # argmax P(v_j)MULT_k(P(word|v_j))
@@ -37,10 +39,8 @@ class BayesModel:
             # estimate P(v_j)
             post = self.docs[j] / sum(self.docs)
             word_probs = [self.word_probs[word][j] for word in test_words]
-            print j, word_probs
             for w in word_probs:
                 post *= w
-                print post
             #post *= reduce(lambda x, y: x*y, word_probs)
             args.append(post)
         print args
