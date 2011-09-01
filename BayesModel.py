@@ -1,6 +1,19 @@
 import fractions 
 
-class BayesModel:
+
+class FractionProbs:
+    def compute_prob(self, j, word):
+        return fractions.Fraction(
+                self.word_occs[word][j] + 1, 
+                self.word_totals[j] + len(self.word_occs)
+            )
+
+class FloatProbs:
+    def compute_prob(self, j, word):
+        return float(self.word_occs[word][j] + 1) \
+                  / float(self.word_totals[j] + len(self.word_occs))
+        
+class BayesModel(FractionProbs):
     def __init__(self):
         self.docs = [0, 0]
         self.word_totals = [0, 0]
@@ -29,15 +42,11 @@ class BayesModel:
         # Init probabilities
         for word in self.word_occs:
             self.word_probs[word] = [0, 0]
-        for t in [0, 1]:
+        for j in [0, 1]:
             # Estimate P(word_k|v_j) = (n_k + 1)/(n + |vocab|)
-            # TODO add mixins to determine whether to use fractions or floats for this 
-            #   (floats don't work on low numbers of training docs)
+            # self.compute_prob is provided by a mixin class
             for word in self.word_occs:
-                self.word_probs[word][t] = fractions.Fraction(
-                                                    self.word_occs[word][t] + 1, 
-                                                    self.word_totals[t] + len(self.word_occs)
-                                                )
+                self.word_probs[word][j] = self.compute_prob(j, word)
         
     def judge(self, document):
         # classification = argmax_j P(v_j) * MULT_k(P(word|v_j))
@@ -60,6 +69,8 @@ if __name__ == "__main__":
     model = BayesModel()
     with open('d1.txt', 'r') as doc:
         b = doc.read()
-    model.add_document(b, True)
-    print model.judge(b)
+    for i in range(1, 100):
+        model.add_document(b, True)
+    for i in range(1, 100):
+        print model.judge(b)
         
