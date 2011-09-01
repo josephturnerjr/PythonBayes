@@ -17,7 +17,6 @@ class BayesModel:
                 self.word_occs[word] = [0, 0]
             self.word_occs[word][index] += 1
         self.rebuild_probs()
-        print self.word_probs
 
     def rebuild_probs(self):
         # P(word_k|v_j) = (n_k + 1)/(n + |vocab|)
@@ -43,7 +42,6 @@ class BayesModel:
                 post *= w
             #post *= reduce(lambda x, y: x*y, word_probs)
             args.append(post)
-        print args
         return args.index(max(args))
         
 
