@@ -1,0 +1,11 @@
+## Goal 
+
+Create a system that uses Bayesian inference to determine which submitted articles make it to the frontpage of HackerNews (http://news.ycombinator.com)
+
+## Reality
+
+A dirt simple Naive Bayes model applied to poorly-scraped text from submitted articles, many of which are not even retrievable. 
+
+## Point
+
+None, really, just a little toy inspired by a reading of Mitchell's excellent text, Machine Learning (http://www.cs.cmu.edu/~tom/mlbook.html).
