@@ -50,15 +50,19 @@ class HNFollower:
             doc = self.undecided[a]
             if a in front:
                 print "Found on frontpage:", doc['url']
+                print doc['class'][0]
+                self.total_predicted += 1
                 if doc['class'][0] == True:
-                    self.total_predicted += 1
+                    print "Success!"
                     self.correct += 1
                 self.model.add_document(doc['text'], True)
                 to_remove.append(a)
             elif now - doc['time'] > self.expire_time:
-                print "Expired:", doc
+                print "Expired:", doc['url']
+                print doc['class'][0]
+                self.total_predicted += 1
                 if doc['class'][0] == False:
-                    self.total_predicted += 1
+                    print "Success!"
                     self.correct += 1
                 self.model.add_document(doc['text'], False)
                 to_remove.append(a)
@@ -66,8 +70,11 @@ class HNFollower:
         for a in to_remove:
             self.seen[a] = self.undecided[a]
             del self.undecided[a]
-        c = float(self.correct) / (self.total_predicted or 1)
-        print "After update, correctness is", c
+        if self.total_predicted != 0:
+            c = float(self.correct) / (self.total_predicted)
+        else: 
+            c = 0.0
+        print "After update, correctness is", c, self.correct, self.total_predicted
 
     def parse_page(self, url):
         print "Getting feed"
@@ -93,10 +100,13 @@ def create_follower():
 
 def main():
     a = create_follower()    
-    a.update()
-    with open(FOLLOWER_PICKLE, "wb") as p:
-        print "Dumping follower to pickle"
-        return pickle.dump(a, p)
+    print a.model.word_probs
+    for i in range(1000):
+        a.update()
+        with open(FOLLOWER_PICKLE, "wb") as p:
+            print "Dumping follower to pickle"
+            pickle.dump(a, p)
+        time.sleep(5 * 60)
     
 if __name__ == "__main__":
     main()

@@ -3,7 +3,7 @@ import fractions
 
 class FractionProbs:
     def compute_prob(self, num, denom):
-        return fractions.Fraction(num, denom).limit_denominator(1000000000)
+        return fractions.Fraction(num, denom).limit_denominator()
 
 class FloatProbs:
     def compute_prob(self, num, denom):
