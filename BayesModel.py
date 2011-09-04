@@ -3,7 +3,7 @@ import fractions
 
 class FractionProbs:
     def compute_prob(self, num, denom):
-        return fractions.Fraction(num, denom).limit_denominator()
+        return fractions.Fraction(num, denom)
 
 class FloatProbs:
     def compute_prob(self, num, denom):
@@ -61,8 +61,12 @@ class BayesModel(FractionProbs):
             # estimate P(v_j)
             post = self.compute_prob(self.docs[j], sum(self.docs.values()))
             # estimate MULT_k(P(word|v_j))
-            word_probs = [self.word_probs[word][j] for word in test_words] or [1]
-            post *= reduce(lambda x, y: x*y, word_probs)
+            _word_probs = [self.word_probs[word][j] for word in test_words]
+            nums = [x.numerator for x in _word_probs] or [1]
+            denoms = [x.denominator for x in _word_probs] or [1]
+            num = reduce(lambda x, y: x*y, nums)
+            denom = reduce(lambda x, y: x*y, denoms)
+            post *= self.compute_prob(num, denom)
             args[j] = post
         # Normalize
         s = sum(args.values())

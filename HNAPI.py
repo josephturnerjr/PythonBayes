@@ -25,12 +25,15 @@ class HNFollower:
         self.total_predicted = 0
         self.expire_time = 3600 * 2
         self.seen = {}
+        self.promoted = {}
+        self.expired = {}
+        self.scrape_regex = re.compile("<td class=\"title\">.*?<a href=\"(.*?)\".*?<td class=\"subtext\".*?<a href=\"item\?id=(\d*?)\"")
         
-    def update_new(self):
-        print "Retrieving article list"
-        articles = self.parse_page(self.new_url)
+    def update_new(self, articles):
         for new in articles:
-            if new not in self.undecided and new not in self.seen:
+            if new not in self.undecided and \
+               new not in self.promoted and \
+               new not in self.expired:
                 print "Trying to add [%s: %s] to undecided" % (new, articles[new])
                 try:
                     article_text = UrlText.get_url_text(articles[new])
@@ -41,11 +44,17 @@ class HNFollower:
                 except Exception, e:
                     print "Error adding", e
         
-    def update_classifications(self):
+    def update(self):
+        print "Retrieving article list"
+        page = self.retrieve_page(self.new_url)
+        self.update_new(self.parse_page(page))
+        
         print "Retrieving frontpage"
-        front = self.parse_page(self.url)
+        _p= self.retrieve_page(self.url)
+        front = self.parse_page(_p)
         now = time.time()
-        to_remove = []
+        promoted = []
+        expired = []
         for a in self.undecided:
             doc = self.undecided[a]
             if a in front:
@@ -56,7 +65,7 @@ class HNFollower:
                     print "Success!"
                     self.correct += 1
                 self.model.add_document(doc['text'], True)
-                to_remove.append(a)
+                promoted.append(a)
             elif now - doc['time'] > self.expire_time:
                 print "Expired:", doc['url']
                 print doc['class'][0]
@@ -65,29 +74,35 @@ class HNFollower:
                     print "Success!"
                     self.correct += 1
                 self.model.add_document(doc['text'], False)
-                to_remove.append(a)
-        print "Removing these:", to_remove
-        for a in to_remove:
-            self.seen[a] = self.undecided[a]
+                expired.append(a)
+        print "Removing these:", promoted + expired
+        for a in promoted:
+            self.promoted[a] = self.undecided[a]
+            del self.undecided[a]
+        for a in expired:
+            self.expired[a] = self.undecided[a]
             del self.undecided[a]
         if self.total_predicted != 0:
             c = float(self.correct) / (self.total_predicted)
         else: 
             c = 0.0
         print "After update, correctness is", c, self.correct, self.total_predicted
+        for i in self.undecided:
+            page = re.sub("<span id=score_" + i + ">", str(self.undecided[i]["class"][1][True].limit_denominator(10000)) + " <span id=score_" + i + ">", page)
 
-    def parse_page(self, url):
-        print "Getting feed"
-        new_feed = urllib2.urlopen(url)
-        new = " ".join(new_feed.read().split("\n"))
+        print "Writing output page"
+        with open("out.html", "w") as out:
+            out.write(page)
+
+    def retrieve_page(self, url):
+        print "Retrieving page", url
+        new_feed = urllib2.urlopen(url, timeout=25)
+        return " ".join(new_feed.read().split("\n"))
+
+    def parse_page(self, page):
         print "Scraping for URLs and IDs"
-        regex = re.compile("<td class=\"title\">.*?<a href=\"(.*?)\".*?<td class=\"subtext\".*?<a href=\"item\?id=(\d*?)\"")
-        return dict([[y,x] for x,y in regex.findall(new)])
+        return dict([[y,x] for x,y in self.scrape_regex.findall(page)])
 
-    def update(self):
-        self.update_new()
-        self.update_classifications()
-        
     
 FOLLOWER_PICKLE = "follower.pickle"
 def create_follower():
@@ -100,12 +115,14 @@ def create_follower():
 
 def main():
     a = create_follower()    
-    print a.model.word_probs
     for i in range(1000):
-        a.update()
-        with open(FOLLOWER_PICKLE, "wb") as p:
-            print "Dumping follower to pickle"
-            pickle.dump(a, p)
+        try:
+            a.update()
+            with open(FOLLOWER_PICKLE, "wb") as p:
+                print "Dumping follower to pickle"
+                pickle.dump(a, p)
+        except Exception, e:
+            print "Error updating", e
         time.sleep(5 * 60)
     
 if __name__ == "__main__":
