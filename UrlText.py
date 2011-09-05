@@ -17,7 +17,7 @@ def get_url_text(url):
 
 if __name__ == "__main__":
     with open('yes.txt', 'w') as a:
-        print get_url_text("http://www.jwz.org/blog/2011/09/surprise-facebook-doesnt-like-privacy-countermeasures/")
+        a.write(get_url_text("http://www.jwz.org/blog/2011/09/surprise-facebook-doesnt-like-privacy-countermeasures/"))
     with open('no.txt', 'w') as a:
-        print get_url_text("http://vishwasbabu.blogspot.com/2011/09/learning-to-let-go-technology-to-rescue.html")
+        a.write(get_url_text("http://vishwasbabu.blogspot.com/2011/09/learning-to-let-go-technology-to-rescue.html"))
 
