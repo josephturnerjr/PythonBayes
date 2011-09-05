@@ -88,6 +88,7 @@ class HNFollower:
             c = 0.0
         print "After update, correctness is", c, self.correct, self.total_predicted
         for i in self.undecided:
+            print self.undecided[i], "\n\n"
             page = re.sub("<span id=score_" + i + ">", str(self.undecided[i]["class"][1][True].limit_denominator(10000)) + " <span id=score_" + i + ">", page)
 
         print "Writing output page"

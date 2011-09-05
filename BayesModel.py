@@ -72,6 +72,7 @@ class BayesModel(FractionProbs):
         s = sum(args.values())
         for k in args:
             args[k] = args[k] / s
+            args[k] = args[k].limit_denominator()
         # Argmax
         inv = [(v, k) for k, v in args.items()]
         inv.sort()

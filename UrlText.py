@@ -7,15 +7,12 @@ def get_url_text(url):
     
     a = " ".join(page.read().split('\n'))
     re.DOTALL=True
-    #headers = [x.strip() for x in re.findall("<h\d>(.*?)</h\d>", a)]
-    #ps = [x.strip() for x in re.findall("<p[^>]*>(.*?)</p>", a)]
     for tag in ["script", "style"]:
         a = re.sub("<"+tag+"[^>]*>(.*?)</"+tag+">", "", a)
     a = re.sub("<[^>]*>", "", a)
-    #glob = " ".join(headers + ps)
-    glob = a
-    glob = re.sub("\s+", " ", glob)
-    return re.sub("<[^>]*>","", glob)
+    a = re.sub("&.*?;", "", a)
+    glob = " ".join(re.findall("\w+[a-zA-Z]+", a))
+    return glob.lower()
 
 
 if __name__ == "__main__":
