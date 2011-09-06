@@ -27,22 +27,27 @@ class HNFollower:
         self.seen = {}
         self.promoted = {}
         self.expired = {}
+        self.skipped = {}
         self.scrape_regex = re.compile("<td class=\"title\">.*?<a href=\"(.*?)\".*?<td class=\"subtext\".*?<a href=\"item\?id=(\d*?)\"")
         
     def update_new(self, articles):
         for new in articles:
             if new not in self.undecided and \
                new not in self.promoted and \
-               new not in self.expired:
+               new not in self.expired and \
+               new not in self.skipped:
                 print "Trying to add [%s: %s] to undecided" % (new, articles[new])
-                try:
-                    article_text = UrlText.get_url_text(articles[new])
-                    self.undecided[new] = {'url': articles[new],        
-                                           'text': article_text, 
-                                           'time': time.time(), 
-                                           'class': self.model.classify(article_text)}
-                except Exception, e:
-                    print "Error adding", e
+                if not "://" in articles[new]:
+                    self.skipped[new] = articles[new]
+                else:
+                    try:
+                        article_text = UrlText.get_url_text(articles[new])
+                        self.undecided[new] = {'url': articles[new],        
+                                               'text': article_text, 
+                                               'time': time.time(), 
+                                               'class': self.model.classify(article_text)}
+                    except Exception, e:
+                        print "Error adding", e
         
     def update(self):
         print "Retrieving article list"
@@ -90,7 +95,13 @@ class HNFollower:
         for i in self.undecided:
             true_rat = self.undecided[i]["class"][1][True].limit_denominator(10000)
             true_pct = 100.0 * float(true_rat.numerator) / true_rat.denominator
-            page = re.sub("<span id=score_" + i + "><b>", str(true_pct) + "</b> <span id=score_" + i + ">", page)
+            page = re.sub("<span id=score_" + i + ">", "<b>" + str(true_pct) + "</b> <span id=score_" + i + ">", page)
+        for i in self.promoted:
+            page = re.sub("<span id=score_" + i + ">", "<b>MADE IT</b> <span id=score_" + i + ">", page)
+        for i in self.expired:
+            page = re.sub("<span id=score_" + i + ">", "<b>TOO LATE</b> <span id=score_" + i + ">", page)
+        for i in self.skipped:
+            page = re.sub("<span id=score_" + i + ">", "<b>SKIPPED</b> <span id=score_" + i + ">", page)
 
         print "Writing output page"
         with open("out.html", "w") as out:
@@ -98,6 +109,7 @@ class HNFollower:
 
     def retrieve_page(self, url):
         print "Retrieving page", url
+        
         new_feed = urllib2.urlopen(url, timeout=25)
         return " ".join(new_feed.read().split("\n"))
 
@@ -115,14 +127,17 @@ def create_follower():
     print "Creating follower"
     return HNFollower()
 
+def save_follower(follower):
+    with open(FOLLOWER_PICKLE, "wb") as p:
+        print "Dumping follower to pickle"
+        pickle.dump(follower, p)
+
 def main():
     a = create_follower()    
     for i in range(1000):
         try:
             a.update()
-            with open(FOLLOWER_PICKLE, "wb") as p:
-                print "Dumping follower to pickle"
-                pickle.dump(a, p)
+            save_follower(a)
         except Exception, e:
             print "Error updating", e
         time.sleep(5 * 60)

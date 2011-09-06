@@ -23,9 +23,7 @@ class BayesModel(FractionProbs):
         if not index in self.docs:
             self.docs[index] = 0
         self.docs[index] += 1
-        print document
         words = document.split()
-        print words
         # Increment position totals for docs of doc_class j
         if not index in self.word_totals:
             self.word_totals[index] = 0
@@ -39,12 +37,10 @@ class BayesModel(FractionProbs):
             self.word_occs[word][index] += 1
         # Rebuild probabilties from occurances
         #   If a lot of documents are going to be trained at once, this should be delayed
-        print "Rebuilding"
         self.rebuild_probs()
 
     def rebuild_probs(self):
         # Init probabilities
-        print self.word_occs
         for word in self.word_occs:
             self.word_probs[word] = {}
         for j in self.docs:
