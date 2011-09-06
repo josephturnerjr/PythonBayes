@@ -88,7 +88,9 @@ class HNFollower:
             c = 0.0
         print "After update, correctness is", c, self.correct, self.total_predicted
         for i in self.undecided:
-            page = re.sub("<span id=score_" + i + ">", str(self.undecided[i]["class"][1][True].limit_denominator(10000)) + " <span id=score_" + i + ">", page)
+            true_rat = self.undecided[i]["class"][1][True].limit_denominator(10000)
+            true_pct = 100.0 * float(true_rat.numerator) / true_rat.denominator
+            page = re.sub("<span id=score_" + i + "><b>", str(true_pct) + "</b> <span id=score_" + i + ">", page)
 
         print "Writing output page"
         with open("out.html", "w") as out:
